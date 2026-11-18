@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Permaculture for the Soul — 3D Journey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sage: #7a8f72;
+      --sage-dark: #5c6e56;
+      --sage-light: #e8ede6;
+      --cream: #faf8f3;
+      --warm-white: #ffffff;
+      --charcoal: #2c2c2c;
+      --terracotta: #b86b52;
+      --soft-gray: #f0ece4;
+      --text-gray: #5a5a5a;
+      --winter: #7da3be;
+      --spring: #9fb378;
+      --summer: #e2b84b;
+      --autumn: #b86b52;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--charcoal);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Top HUD */
+    .hud-top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      pointer-events: none;
+    }
+
+    .brand-pill, .hud-actions {
+      pointer-events: auto;
+      background: rgba(250, 248, 243, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(92, 110, 86, 0.2);
+      border-radius: 999px;
+      padding: 0.55rem 1.1rem;
+      box-shadow: 0 8px 24px rgba(44, 44, 44, 0.08);
+    }
+
+    .brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--terracotta);
+    }
+
+    .brand-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--sage-dark);
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--text-gray);
+      display: none;
+    }
+
+    @media (min-width: 700px) {
+      .brand-sub { display: inline; }
+    }
+
+    .hud-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-chip {
+      border: none;
+      background: transparent;
+      color: var(--charcoal);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-chip:hover, .nav-chip.active {
+      background: var(--sage-dark);
+      color: #fff;
+    }
+
+    /* Bottom Living Loop Bar */
+    .loop-bar {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(250, 248, 243, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(92, 110, 86, 0.22);
+      border-radius: 999px;
+      padding: 0.45rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: 0 10px 28px rgba(44, 44, 44, 0.1);
+      max-width: 95vw;
+      overflow-x: auto;
+    }
+
+    .loop-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--terracotta);
+      font-weight: 600;
+      padding: 0 0.4rem;
+      white-space: nowrap;
+    }
+
+    .loop-step {
+      border: 1px solid var(--soft-gray);
+      background: var(--warm-white);
+      color: var(--charcoal);
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 0.32rem 0.75rem;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .loop-step:hover, .loop-step.active {
+      background: var(--sage);
+      color: #fff;
+      border-color: var(--sage);
+    }
+
+    /* Slide-over Discovery Drawer */
+    .drawer {
+      position: fixed;
+      top: 4.5rem;
+      right: 1.5rem;
+      bottom: 4.2rem;
+      width: min(430px, calc(100vw - 3rem));
+      z-index: 12;
+      background: rgba(250, 248, 243, 0.96);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(92, 110, 86, 0.22);
+      border-radius: 20px;
+      padding: 1.5rem;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(44, 44, 44, 0.16);
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .drawer.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(20px);
+    }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2.2px;
+      color: var(--terracotta);
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      line-height: 1.15;
+    }
+
+    .drawer h2 {
+      font-size: 2rem;
+      color: var(--charcoal);
+      margin-bottom: 0.75rem;
+    }
+
+    .drawer p {
+      font-size: 0.93rem;
+      line-height: 1.65;
+      color: var(--text-gray);
+      margin-bottom: 1rem;
+    }
+
+    .quote-box {
+      border-left: 3px solid var(--terracotta);
+      padding-left: 1rem;
+      margin: 1rem 0;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1.15rem;
+      color: var(--charcoal);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.7rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--terracotta);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #9f5841;
+    }
+
+    .btn-sage {
+      background: var(--sage-dark);
+      color: #fff;
+    }
+
+    .btn-sage:hover {
+      background: var(--sage);
+    }
+
+    .btn-ghost {
+      background: var(--soft-gray);
+      color: var(--charcoal);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+    }
+
+    /* Seasonal Compass Widget */
+    .compass-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 1rem 0 1.25rem;
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin-bottom: 1rem;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 18px solid var(--charcoal);
+      z-index: 4;
+    }
+
+    .wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--winter) 0deg 90deg,
+        var(--spring) 90deg 180deg,
+        var(--summer) 180deg 270deg,
+        var(--autumn) 270deg 360deg
+      );
+      border: 5px solid var(--warm-white);
+      box-shadow: 0 10px 25px rgba(44, 44, 44, 0.14);
+      transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+
+    .spin-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 3px solid var(--warm-white);
+      background: var(--sage-dark);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      z-index: 5;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .season-card {
+      width: 100%;
+      background: var(--warm-white);
+      border: 1px solid var(--soft-gray);
+      border-radius: 14px;
+      padding: 1rem;
+    }
+
+    .season-card ul {
+      margin-left: 1.1rem;
+      font-size: 0.88rem;
+      color: var(--text-gray);
+      line-height: 1.6;
+    }
+
+    .video-placeholder {
+      background: var(--sage-light);
+      border: 1px dashed var(--sage-dark);
+      border-radius: 14px;
+      padding: 1rem;
+      margin: 0.85rem 0;
+      font-size: 0.86rem;
+      color: var(--sage-dark);
+    }
+
+    .app-pill-grid {
+      display: grid;
+      gap: 0.7rem;
+      margin: 0.8rem 0;
+    }
+
+    .app-box {
+      background: var(--warm-white);
+      border: 1px solid var(--soft-gray);
+      border-radius: 12px;
+      padding: 0.9rem;
+    }
+
+    .app-box h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+    }
+
+    .waitlist-form input {
+      flex: 1;
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid #d5cfc4;
+      font-size: 0.86rem;
+      background: #fff;
+    }
+
+    .drawer-close {
+      position: sticky;
+      top: 0;
+      float: right;
+      border: none;
+      background: var(--soft-gray);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <header class="hud-top">
+    <div class="brand-pill">
+      <span class="brand-dot"></span>
+      <span class="brand-title">Permaculture for the Soul</span>
+      <span class="brand-sub">· Spanish Mountains · Grow slowly, grow well, live well</span>
+    </div>
+    <nav class="hud-actions" aria-label="3D Landmarks">
+      <button class="nav-chip active" data-landmark="threshold">Journey</button>
+      <button class="nav-chip" data-landmark="compass">Seasonal Compass</button>
+      <button class="nav-chip" data-landmark="mushy">Mushy</button>
+      <button class="nav-chip" data-landmark="skool">Skool</button>
+      <button class="nav-chip" data-landmark="shop">Wearable Wisdom</button>
+      <button class="nav-chip" data-landmark="apps">Growable & Journal</button>
+    </nav>
+  </header>
+
+  <aside id="drawer" class="drawer">
+    <button id="close-drawer" class="drawer-close" title="Close panel">✕</button>
+    <div id="drawer-content"></div>
+  </aside>
+
+  <footer class="loop-bar" aria-label="The Living Loop">
+    <span class="loop-label">Living Loop</span>
+    <button class="loop-step active" data-stage="observe">1. Observe</button>
+    <button class="loop-step" data-stage="restore">2. Restore</button>
+    <button class="loop-step" data-stage="grow">3. Grow</button>
+    <button class="loop-step" data-stage="share">4. Share</button>
+  </footer>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#eef2eb');
+    scene.fog = new THREE.FogExp2('#eef2eb', 0.022);
+
+    const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 11, 22);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2.15;
+    controls.minDistance = 5;
+    controls.maxDistance = 38;
+
+    // Lighting
+    const hemiLight = new THREE.HemisphereLight('#ffffff', '#7a8f72', 1.15);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight('#fff5e4', 1.5);
+    dirLight.position.set(12, 18, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
+
+    // Terrain ground
+    const groundGeo = new THREE.CircleGeometry(45, 64);
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: '#dce4d7',
+      roughness: 0.92,
+      metalness: 0.02
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Winding path
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.04, 13),
+      new THREE.Vector3(-5, 0.04, 6),
+      new THREE.Vector3(5, 0.04, 1),
+      new THREE.Vector3(-6, 0.04, -5),
+      new THREE.Vector3(4, 0.04, -10),
+      new THREE.Vector3(0, 0.04, -15)
+    ]);
+    const pathGeo = new THREE.TubeGeometry(curve, 80, 0.55, 8, false);
+    const pathMat = new THREE.MeshStandardMaterial({ color: '#e8dfd1', roughness: 1 });
+    const pathMesh = new THREE.Mesh(pathGeo, pathMat);
+    pathMesh.scale.set(1, 0.08, 1);
+    pathMesh.receiveShadow = true;
+    scene.add(pathMesh);
+
+    // Decorative trees & stones
+    function addTree(x, z, scale = 1, tint = '#6f8567') {
+      const group = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, 1.4 * scale, 8),
+        new THREE.MeshStandardMaterial({ color: '#7a5c46', roughness: 0.9 })
+      );
+      trunk.position.y = 0.7 * scale;
+      trunk.castShadow = true;
+
+      const crown = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(1.15 * scale, 1),
+        new THREE.MeshStandardMaterial({ color: tint, roughness: 0.8 })
+      );
+      crown.position.y = 1.9 * scale;
+      crown.castShadow = true;
+
+      group.add(trunk, crown);
+      group.position.set(x, 0, z);
+      scene.add(group);
+    }
+
+    [
+      [-10, 9, 1.1, '#7a8f72'], [9, 8, 0.9, '#889c7f'], [-11, 0, 1.25, '#667b5e'],
+      [10, -2, 1.05, '#7a8f72'], [-9, -11, 1.2, '#5c6e56'], [9, -12, 1.15, '#7a8f72'],
+      [-3, 14, 0.8, '#889c7f'], [4, 13, 0.85, '#7a8f72']
+    ].forEach(t => addTree(...t));
+
+    // Landmark configurations
+    const landmarks = {
+      threshold: {
+        pos: new THREE.Vector3(0, 0, 11),
+        camPos: new THREE.Vector3(0, 8, 18),
+        color: '#5c6e56',
+        shape: 'octahedron',
+        eyebrow: 'Permaculture for the Soul',
+        title: 'Return to Rhythm, Not Another List',
+        html: `
+          <p>Moving from <em>Activated Living</em> into <strong>Permaculture for the Soul</strong>—a calm space for people returning to rhythm through nature, simplicity, and seasonal living. You don't need acres; a tray of microgreens on a windowsill can be enough.</p>
+          <div class="quote-box">"Rhythm over hustle. Presence over productivity. Grow slowly, grow well, live well."</div>
+          <p><strong>Clare &amp; Darren's Story:</strong> From neurodivergent overwhelm and off-grid lessons in the Spanish mountains came the <em>Living Loop</em>—permission to walk slow and work with your energy rather than forcing against it.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary" data-jump="compass">Spin the Seasonal Compass →</button>
+            <button class="btn btn-ghost" data-jump="mushy">Meet Mushy</button>
+          </div>
+        `
+      },
+      compass: {
+        pos: new THREE.Vector3(-5, 0, 6),
+        camPos: new THREE.Vector3(-5, 7, 13),
+        color: '#7da3be',
+        shape: 'torus',
+        eyebrow: 'Interactive Tool',
+        title: 'The Seasonal Compass',
+        html: `
+          <p>Check your internal weather—<strong>Winter (Depleted)</strong>, <strong>Spring (Scattered)</strong>, <strong>Summer (Energized)</strong>, or <strong>Autumn (Overwhelmed / Full)</strong>—and spin for gentle next steps.</p>
+          <div class="compass-wrap">
+            <div class="wheel-container">
+              <div class="pointer"></div>
+              <div id="compass-wheel" class="wheel"></div>
+              <button id="spin-btn" class="spin-center" type="button">Spin</button>
+            </div>
+            <div id="season-readout" class="season-card">
+              <div class="eyebrow">Winter (Depleted)</div>
+              <ul>
+                <li>Sensory rest: low light, headphones</li>
+                <li>Permission to say no</li>
+                <li>Gentle stretches &amp; quiet observation</li>
+              </ul>
+            </div>
+          </div>
+        `
+      },
+      mushy: {
+        pos: new THREE.Vector3(5, 0, 1),
+        camPos: new THREE.Vector3(5, 6.5, 8.5),
+        color: '#b86b52',
+        shape: 'mushroom',
+        eyebrow: 'Daily Spores of Wisdom · Fungal Family',
+        title: 'Mushy’s Woodland Clearing',
+        html: `
+          <p><strong>Mushy</strong> drops <em>Daily Spores of Wisdom</em> to the <strong>Fungal Family</strong>—quiet mycelial reminders connecting soil, soul, and slow living.</p>
+          <div class="video-placeholder">
+            <strong>Mushy Character Video Slot:</strong> Drop your Mushy video file or embed URL right here so visitors in the Fungal Family can press play inside his 3D clearing.
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" data-jump="shop">Explore Wearable Wisdom →</button>
+            <button class="btn btn-ghost" data-jump="skool">Join on Skool</button>
+          </div>
+        `
+      },
+      skool: {
+        pos: new THREE.Vector3(-6, 0, -5),
+        camPos: new THREE.Vector3(-6, 7, 2.5),
+        color: '#5c6e56',
+        shape: 'dodecahedron',
+        eyebrow: 'Community & Living Loop Framework',
+        title: 'Permaculture for the Soul on Skool',
+        html: `
+          <p>Where the <em>"Good Girl"</em> meets the <em>"Chaos Creative"</em>—and neither has to apologise for how their brain works.</p>
+          <p>Inside the community: the <strong>Living Loop Framework</strong>, seasonal living, reflection &amp; journalling, neurodiverse-friendly homesteading, and the Living Library.</p>
+          <div class="btn-row">
+            <a class="btn btn-sage" href="https://www.skool.com/permaculture-for-the-soul-3779/about" target="_blank" rel="noopener">Open Skool Community ↗</a>
+          </div>
+        `
+      },
+      shop: {
+        pos: new THREE.Vector3(4, 0, -10),
+        camPos: new THREE.Vector3(4, 7, -2.5),
+        color: '#d4917a',
+        shape: 'box',
+        eyebrow: 'Shopify Storefront',
+        title: 'Wearable Wisdom',
+        html: `
+          <p><strong>Wear Your Values. Words That Take Root - Clothes That Grows With You.</strong> Thoughtfully designed, nature-inspired apparel rooted in slow living.</p>
+          <p>Featuring pieces like <em>"Compost Your Bad Days"</em>, <em>"My Focus Is Seasonal"</em>, hoodies, totes, beanies, and travel mugs.</p>
+          <div class="btn-row">
+            <a class="btn btn-primary" href="https://u1v11v-un.myshopify.com" target="_blank" rel="noopener">Visit Wearable Wisdom Shop ↗</a>
+          </div>
+        `
+      },
+      apps: {
+        pos: new THREE.Vector3(0, 0, -15),
+        camPos: new THREE.Vector3(0, 8, -7),
+        color: '#7a8f72',
+        shape: 'cone',
+        eyebrow: 'Future Apps Seedbed',
+        title: 'Growable & The Journal',
+        html: `
+          <p>Two upcoming apps sprouting from the Permaculture for the Soul ecosystem:</p>
+          <div class="app-pill-grid">
+            <div class="app-box">
+              <h3>Growable</h3>
+              <p>Gentle seasonal growing &amp; energy-aware planning designed to work with your rhythm rather than rigid lists.</p>
+            </div>
+            <div class="app-box">
+              <h3>The Journal</h3>
+              <p>A reflective space for seed notes, internal weather check-ins, and keeping wisdom for Future You.</p>
+            </div>
+          </div>
+          <form id="waitlist-form" class="waitlist-form">
+            <input type="email" required placeholder="Your email for early access..." />
+            <button type="submit" class="btn btn-sage">Join</button>
+          </form>
+          <p id="waitlist-msg" style="font-size:0.8rem; margin-top:0.4rem; color:var(--sage-dark);"></p>
+        `
+      }
+    };
+
+    const markerMeshes = [];
+
+    Object.entries(landmarks).forEach(([key, item]) => {
+      const group = new THREE.Group();
+      group.position.copy(item.pos);
+
+      const baseRing = new THREE.Mesh(
+        new THREE.RingGeometry(1.15, 1.45, 32),
+        new THREE.MeshBasicMaterial({ color: item.color, side: THREE.DoubleSide })
+      );
+      baseRing.rotation.x = -Math.PI / 2;
+      baseRing.position.y = 0.05;
+      group.add(baseRing);
+
+      let mesh;
+      const mat = new THREE.MeshStandardMaterial({
+        color: item.color,
+        roughness: 0.4,
+        metalness: 0.1
+      });
+
+      if (item.shape === 'mushroom') {
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.9, 12), new THREE.MeshStandardMaterial({ color: '#f5efe6' }));
+        stem.position.y = 0.65;
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.85, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), mat);
+        cap.position.y = 1.0;
+        mesh = new THREE.Group();
+        mesh.add(stem, cap);
+      } else {
+        const geoMap = {
+          octahedron: new THREE.OctahedronGeometry(0.85, 0),
+          torus: new THREE.TorusGeometry(0.7, 0.22, 12, 24),
+          dodecahedron: new THREE.DodecahedronGeometry(0.82, 0),
+          box: new THREE.BoxGeometry(1.1, 1.1, 1.1),
+          cone: new THREE.ConeGeometry(0.85, 1.4, 16)
+        };
+        mesh = new THREE.Mesh(geoMap[item.shape], mat);
+        mesh.position.y = 1.25;
+      }
+
+      mesh.traverse(obj => {
+        if (obj.isMesh) {
+          obj.castShadow = true;
+          obj.userData.landmarkKey = key;
+          markerMeshes.push(obj);
+        }
+      });
+
+      group.add(mesh);
+      group.userData = { bobMesh: mesh, phase: Math.random() * Math.PI * 2 };
+      scene.add(group);
+    });
+
+    // Camera transition state
+    let targetCamPos = null;
+    let targetLookAt = null;
+
+    const drawer = document.getElementById('drawer');
+    const drawerContent = document.getElementById('drawer-content');
+    const closeDrawerBtn = document.getElementById('close-drawer');
+
+    const seasonData = [
+      {
+        name: 'Winter (Depleted)',
+        bullets: [
+          'Sensory rest: low light, headphones',
+          'Permission to say no',
+          'Gentle stretches & quiet observation'
+        ]
+      },
+      {
+        name: 'Spring (Scattered)',
+        bullets: [
+          'Brain dump tasks onto paper',
+          'Identify one companion project',
+          'Grounding: land / farm connection'
+        ]
+      },
+      {
+        name: 'Summer (Energized)',
+        bullets: [
+          'Maximize flow state',
+          'Creative output boost',
+          'Celebrate your harvest'
+        ]
+      },
+      {
+        name: 'Autumn (Overwhelmed / Full)',
+        bullets: [
+          'Audit current commitments & capacity',
+          'Eliminate non-essentials',
+          'Prepare your winter stores'
+        ]
+      }
+    ];
+
+    let currentSpin = 0;
+
+    function bindDrawerEvents() {
+      drawer.querySelectorAll('[data-jump]').forEach(btn => {
+        btn.addEventListener('click', () => selectLandmark(btn.getAttribute('data-jump')));
+      });
+
+      const spinBtn = document.getElementById('spin-btn');
+      const wheel = document.getElementById('compass-wheel');
+      const readout = document.getElementById('season-readout');
+
+      if (spinBtn && wheel && readout) {
+        spinBtn.addEventListener('click', () => {
+          const idx = Math.floor(Math.random() * seasonData.length);
+          // Center each 90-deg slice under the top pointer
+          const sliceCenterAngle = idx * 90 + 45;
+          const extraTurns = 360 * 3;
+          currentSpin += extraTurns + ((360 - sliceCenterAngle) - (currentSpin % 360) + 360) % 360;
+          wheel.style.transform = `rotate(${currentSpin}deg)`;
+
+          const s = seasonData[idx];
+          readout.innerHTML = `
+            <div class="eyebrow">${s.name}</div>
+            <ul>${s.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+          `;
+        });
+      }
+
+      const form = document.getElementById('waitlist-form');
+      if (form) {
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const msg = document.getElementById('waitlist-msg');
+          if (msg) msg.textContent = 'Noted! You are on the early list for Growable & The Journal.';
+          form.reset();
+        });
+      }
+    }
+
+    function selectLandmark(key) {
+      const item = landmarks[key];
+      if (!item) return;
+
+      document.querySelectorAll('.nav-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.getAttribute('data-landmark') === key);
+      });
+
+      targetCamPos = item.camPos.clone();
+      targetLookAt = item.pos.clone().add(new THREE.Vector3(0, 1, 0));
+
+      drawer.classList.remove('hidden');
+      drawerContent.innerHTML = `
+        <div class="eyebrow">${item.eyebrow}</div>
+        <h2>${item.title}</h2>
+        ${item.html}
+      `;
+      bindDrawerEvents();
+    }
+
+    document.querySelectorAll('.nav-chip').forEach(btn => {
+      btn.addEventListener('click', () => selectLandmark(btn.getAttribute('data-landmark')));
+    });
+
+    closeDrawerBtn.addEventListener('click', () => drawer.classList.add('hidden'));
+
+    // Living Loop buttons
+    const loopStages = {
+      observe: { key: 'threshold', note: 'Observe: Notice where you actually are right now.' },
+      restore: { key: 'compass', note: 'Restore: Rest without guilt and honor your internal weather.' },
+      grow: { key: 'apps', note: 'Grow: Nurture ideas, plants, and gentle habits at a sustainable pace.' },
+      share: { key: 'skool', note: 'Share: Pass wisdom on with Mushy, the Fungal Family, and Wearable Wisdom.' }
+    };
+
+    document.querySelectorAll('.loop-step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const stage = btn.getAttribute('data-stage');
+        document.querySelectorAll('.loop-step').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (loopStages[stage]) selectLandmark(loopStages[stage].key);
+      });
+    });
+
+    // Click on 3D landmarks
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+
+    renderer.domElement.addEventListener('pointerdown', e => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointerup', e => {
+      const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      if (dist > 6) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(markerMeshes, false);
+      if (hits.length > 0 && hits[0].object.userData.landmarkKey) {
+        selectLandmark(hits[0].object.userData.landmarkKey);
+      }
+    });
+
+    // Open initial panel
+    selectLandmark('threshold');
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
+
+      scene.children.forEach(obj => {
+        if (obj.userData && obj.userData.bobMesh) {
+          obj.userData.bobMesh.position.y = 1.25 + Math.sin(elapsed * 2 + obj.userData.phase) * 0.14;
+          obj.userData.bobMesh.rotation.y += 0.006;
+        }
+      });
+
+      if (targetCamPos && targetLookAt) {
+        camera.position.lerp(targetCamPos, 0.05);
+        controls.target.lerp(targetLookAt, 0.05);
+        if (camera.position.distanceTo(targetCamPos) < 0.15) {
+          targetCamPos = null;
+          targetLookAt = null;
+        }
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
